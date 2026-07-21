@@ -263,3 +263,36 @@ The initial UI rendered by the component on the client must be identical to the 
 
 * Use the `use_server_future` hook instead of `use_resource`. It runs the future on the server, serializes the result, and sends it to the client, ensuring the client has the data immediately for its first render.
 * Any code that relies on browser-specific APIs (like accessing `localStorage`) must be run *after* hydration. Place this code inside a `use_effect` hook.
+
+# Cursor Cloud specific instructions
+
+Cloud Agents use `.cursor/environment.json` + `.cursor/Dockerfile` (Rust stable, `wasm32-unknown-unknown`, `dx`, `uv`, Playwright Chromium). The `dioxus` terminal starts `dx serve` on port 8080.
+
+## Verify before e2e
+
+Wait until the app is built and serving HTTP 200 (500 means still compiling):
+
+```bash
+for i in {1..180}; do
+  code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 || echo 000)
+  [ "$code" = "200" ] && break
+  sleep 2
+done
+```
+
+## Common commands
+
+```bash
+# Format / lint
+cargo fmt --all
+uv run ruff format .
+uv run ruff check .
+
+# Release-ish web build (matches CI)
+dx build --bundle web --target wasm32-unknown-unknown --no-default-features --features web
+
+# E2E (server must already be on :8080)
+BASE_URL=http://localhost:8080 uv run pytest tests/ -v
+```
+
+If `dx serve` is not running, start it with `dx serve --platform web --port 8080 --hot-reload=false`.
