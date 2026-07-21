@@ -4,8 +4,8 @@ const HEADER_SVG: Asset = asset!("/assets/header.svg");
 
 #[component]
 pub fn Hero() -> Element {
-    // We can create elements inside the rsx macro with the element name followed by a block of attributes and children.
     rsx! {
+        // We can create elements inside the rsx macro with the element name followed by a block of attributes and children.
         div {
             // Attributes should be defined in the element before any children
             id: "hero",

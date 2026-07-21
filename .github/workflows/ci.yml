@@ -104,6 +104,8 @@ jobs:
       - name: Install Dioxus CLI
         shell: bash
         run: |
+          # install.sh copies dx into $CARGO_HOME/bin; ensure it exists (CI uses /tmp/cargo)
+          mkdir -p "$CARGO_HOME/bin"
           curl -LsSf https://dioxus.dev/install.sh | bash
           echo "$CARGO_HOME/bin" >> $GITHUB_PATH
 
