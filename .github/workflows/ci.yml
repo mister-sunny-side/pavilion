@@ -1,0 +1,226 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint-and-format:
+    runs-on: ubuntu-latest
+    # Set rustup and cargo to use /tmp to avoid cross-device link errors in Docker/act
+    env:
+      RUSTUP_HOME: /tmp/rustup
+      CARGO_HOME: /tmp/cargo
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.CARGO_HOME }}/bin/
+            ${{ env.CARGO_HOME }}/registry/index/
+            ${{ env.CARGO_HOME }}/registry/cache/
+            ${{ env.CARGO_HOME }}/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Check Rust formatting
+        run: cargo fmt --all -- --check
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install Python dependencies
+        run: uv sync --extra dev
+
+      - name: Check Python formatting with ruff
+        run: uv run ruff format --check .
+
+      - name: Check Python linting with ruff
+        run: uv run ruff check .
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    # Set rustup and cargo to use /tmp to avoid cross-device link errors in Docker/act
+    env:
+      RUSTUP_HOME: /tmp/rustup
+      CARGO_HOME: /tmp/cargo
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.CARGO_HOME }}/bin/
+            ${{ env.CARGO_HOME }}/registry/index/
+            ${{ env.CARGO_HOME }}/registry/cache/
+            ${{ env.CARGO_HOME }}/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install Dioxus CLI
+        shell: bash
+        run: |
+          curl -LsSf https://dioxus.dev/install.sh | bash
+          echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+
+      - name: Verify Dioxus CLI installation
+        run: dx --version
+
+      - name: Install wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Build the application
+        run: |
+          dx build --bundle web --target wasm32-unknown-unknown --no-default-features --features web --release || dx build --bundle web --target wasm32-unknown-unknown --no-default-features --features web
+        continue-on-error: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install Python dependencies
+        run: uv sync --extra dev
+
+      - name: Install Playwright browsers
+        run: uv run playwright install --with-deps
+
+      - name: Start Dioxus server in background
+        shell: bash
+        run: |
+          nohup dx serve --platform web --port 8080 --hot-reload=false > dx_server.log 2>&1 &
+          DX_PID=$!
+          echo "DX_PID=$DX_PID" >> $GITHUB_ENV
+          echo "Dioxus server starting (PID: $DX_PID)..."
+          # Wait for server to be ready and build to complete
+          # We need to wait for HTTP 200, not just any response (500 means app is still building)
+          echo "Waiting for server to start and build to complete..."
+          for i in {1..180}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "Server is ready and app is built! (HTTP $HTTP_CODE)"
+              # Give it a moment to fully stabilize
+              sleep 2
+              break
+            fi
+            if [ "$HTTP_CODE" = "000" ]; then
+              echo "Server not responding yet... ($i/180)"
+            else
+              echo "Server responding but app still building... (HTTP $HTTP_CODE, $i/180)"
+            fi
+            if [ $i -eq 180 ]; then
+              echo "Server failed to become ready in time"
+              echo "Last HTTP code: $HTTP_CODE"
+              cat dx_server.log || true
+              kill $DX_PID 2>/dev/null || true
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Verify server is running
+        run: |
+          # Verify server is responding with 200 (app is built and ready)
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080)
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Server is not ready (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+          echo "Server is ready and responding with HTTP $HTTP_CODE"
+
+      - name: Run e2e tests
+        run: uv run pytest tests/ -v
+        env:
+          BASE_URL: http://localhost:8080
+
+      - name: Cleanup server
+        if: always()
+        shell: bash
+        run: |
+          echo "=== Cleaning up server ==="
+          if [ -n "$DX_PID" ]; then
+            kill $DX_PID 2>/dev/null || true
+            sleep 2
+            kill -9 $DX_PID 2>/dev/null || true
+          fi
+          # Also try to kill any remaining dx processes
+          pkill -f "dx serve" || true
+
+      - name: Show server logs on failure
+        if: failure()
+        run: |
+          echo "=== Server Logs ==="
+          cat dx_server.log || echo "No server logs available"
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload test screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 30

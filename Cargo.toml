@@ -1,0 +1,19 @@
+[package]
+name = "pavilion"
+version = "0.1.0"
+authors = ["mister-sunny-side <sam.james.miller@icloud.com>"]
+edition = "2021"
+
+[dependencies]
+dioxus = { version = "0.7.9", features = ["router", "fullstack"] }
+
+[features]
+default = ["web"]
+# The feature that are only required for the web build target should be optional and only enabled in the web feature
+web = ["dioxus/web"]
+# The feature that are only required for the desktop build target should be optional and only enabled in the desktop feature
+desktop = ["dioxus/desktop"]
+# The feature that are only required for the mobile build target should be optional and only enabled in the mobile feature
+mobile = ["dioxus/mobile"]
+# The feature that are only required for the server build target should be optional and only enabled in the server feature
+server = ["dioxus/server"]
