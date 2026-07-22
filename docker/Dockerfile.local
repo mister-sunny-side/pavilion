@@ -1,34 +1,72 @@
 # Multi-stage image: build Pavilion from source, then serve the release web bundle.
 # Used by docker/compose.local.yml
+#
+# Requires BuildKit (Docker default). Official dx binaries need glibc >= 2.39,
+# so builder/runtime use Ubuntu 24.04.
 
-FROM rust:1-bookworm AS builder
+# syntax=docker/dockerfile:1
+
+FROM ubuntu:24.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF-8 \
+    CARGO_HOME=/usr/local/cargo \
+    RUSTUP_HOME=/usr/local/rustup \
+    PATH=/usr/local/cargo/bin:$PATH \
+    CARGO_NET_RETRY=10 \
+    CARGO_HTTP_TIMEOUT=600 \
+    CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     ca-certificates \
     clang \
     curl \
     pkg-config \
     libssl-dev \
     binaryen \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Dioxus CLI (dx)
-RUN curl -LsSf https://dioxus.dev/install.sh | bash
-ENV PATH="/root/.cargo/bin:${PATH}"
+# Rust stable + wasm target
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+    | sh -s -- -y --default-toolchain stable --profile minimal \
+    && . "$CARGO_HOME/env" \
+    && rustup target add wasm32-unknown-unknown
 
-RUN rustup target add wasm32-unknown-unknown
+# Pin dx to the project version; cargo install links against this image's glibc.
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    . "$CARGO_HOME/env" \
+    && cargo install dioxus-cli --version 0.7.9 --locked \
+    && dx --version
 
 WORKDIR /src
 
-# Cache dependency builds when only app sources change
 COPY Cargo.toml Cargo.lock ./
 COPY Dioxus.toml clippy.toml tailwind.css ./
 COPY assets ./assets
 COPY src ./src
 
-RUN dx build --platform web --release
+# Prefetch crates (retry on flaky crates.io), then release-build the web bundle.
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    . "$CARGO_HOME/env" \
+    && for attempt in 1 2 3 4 5; do \
+         echo "cargo fetch attempt ${attempt}/5" \
+         && cargo fetch --locked \
+         && break \
+         || { echo "cargo fetch failed; retrying..."; sleep 15; } \
+       done \
+    && cargo fetch --locked \
+    && dx build --platform web --release \
+    && test -x /src/target/dx/pavilion/release/web/server \
+    && test -d /src/target/dx/pavilion/release/web/public
 
-FROM debian:bookworm-slim AS runtime
+FROM ubuntu:24.04 AS runtime
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF-8
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
