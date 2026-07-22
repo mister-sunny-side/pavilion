@@ -1,10 +1,17 @@
 # Pavilion
 
-A Rust [Dioxus](https://dioxuslabs.com/) blog with Playwright end-to-end tests and GitHub Actions CI.
+A small, simple, fast blogging site built with [Dioxus](https://dioxuslabs.com/).
+
+Pavilion aims to stay lightweight: write posts, publish them, and keep the surface area small. The current app is a Jumpstart fullstack scaffold (`/`, `/blog/:id`) with Playwright e2e coverage and GitHub Actions CI.
+
+## Roadmap
+
+- **Markdown posts** — render simple markdown files into clean blog posts
+- **Basic comments** — add lightweight commenting once posts are markdown-backed
 
 ## Stack
 
-- **Dioxus 0.7.9** (fullstack + router) — Jumpstart blog scaffold (`/`, `/blog/:id`)
+- **Dioxus 0.7.9** (fullstack + router)
 - **Playwright** via `pytest-playwright` for e2e tests
 - **uv** + **ruff** for Python tooling
 - **GitHub Actions** for format checks, build, and e2e
