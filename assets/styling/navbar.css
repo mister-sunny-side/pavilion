@@ -1,16 +1,26 @@
 #navbar {
   display: flex;
   flex-direction: row;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #2a2f3a;
 }
 
 #navbar a {
-  color: #ffffff;
-  margin-right: 20px;
+  color: #a8b0c0;
+  padding: 0.6rem 1rem;
   text-decoration: none;
-  transition: color 0.2s ease;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.2s ease, border-color 0.2s ease;
 }
 
 #navbar a:hover {
   cursor: pointer;
-  color: #91a4d2;
+  color: #ffffff;
+}
+
+#navbar a.active {
+  color: #ffffff;
+  border-bottom-color: #91a4d2;
 }

@@ -1,0 +1,35 @@
+#dialogue {
+  max-width: 40rem;
+}
+
+#dialogue h1 {
+  margin-bottom: 0.25rem;
+}
+
+#dialogue p {
+  margin-top: 0;
+  color: #a8b0c0;
+}
+
+#dialogue-posts {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 0;
+}
+
+#dialogue-posts li {
+  margin: 0.75rem 0;
+}
+
+#dialogue-posts a {
+  color: #ffffff;
+  text-decoration: none;
+  border-bottom: 1px solid #3a4254;
+  padding-bottom: 0.15rem;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+#dialogue-posts a:hover {
+  color: #91a4d2;
+  border-color: #91a4d2;
+}
