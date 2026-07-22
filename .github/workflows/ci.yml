@@ -226,3 +226,57 @@ jobs:
           name: test-results
           path: test-results/
           retention-days: 30
+
+  # Publish the release web bundle (server binary + public/) only on master/main.
+  # Uses Actions artifacts so each successful master push is downloadable from the run.
+  publish:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+    needs: [lint-and-format, build-and-test]
+    runs-on: ubuntu-latest
+    env:
+      RUSTUP_HOME: /tmp/rustup
+      CARGO_HOME: /tmp/cargo
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.CARGO_HOME }}/bin/
+            ${{ env.CARGO_HOME }}/registry/index/
+            ${{ env.CARGO_HOME }}/registry/cache/
+            ${{ env.CARGO_HOME }}/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-release-
+            ${{ runner.os }}-cargo-
+
+      - name: Install Dioxus CLI
+        shell: bash
+        run: |
+          mkdir -p "$CARGO_HOME/bin"
+          curl -LsSf https://dioxus.dev/install.sh | bash
+          echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+
+      - name: Install wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Build release web bundle
+        run: dx build --platform web --release
+
+      - name: Upload application artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pavilion-web
+          path: target/dx/pavilion/release/web/
+          if-no-files-found: error
+          retention-days: 90

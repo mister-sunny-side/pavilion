@@ -71,3 +71,5 @@ On pull requests and pushes to `main`/`master`, GitHub Actions:
 1. Checks Rust (`cargo fmt`) and Python (`ruff`) formatting
 2. Builds the Dioxus web app
 3. Starts `dx serve` and runs Playwright e2e tests
+
+On pushes to `main`/`master` only (after lint + e2e pass), a **publish** job builds a release web bundle and uploads it as the `pavilion-web` Actions artifact (`server` binary + `public/` static/WASM assets). Download it from the workflow run’s Artifacts section.
