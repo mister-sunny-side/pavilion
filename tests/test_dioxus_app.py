@@ -12,6 +12,7 @@ To run these tests:
 2. Run tests: uv run pytest tests/test_dioxus_app.py
 """
 
+import re
 from urllib.parse import urljoin
 
 from playwright.sync_api import Page, expect
@@ -42,6 +43,19 @@ def test_home_page_loads_and_displays_content(page: Page):
 
     echo = page.locator("#echo")
     expect(echo).to_be_visible()
+
+
+def test_home_page_learn_dioxus_link_works(page: Page):
+    """Test that the Learn Dioxus hero link is present and navigates correctly."""
+    page.wait_for_load_state("networkidle")
+
+    learn_link = page.locator("#hero #links").get_by_role("link", name="Learn Dioxus")
+    expect(learn_link).to_be_visible()
+    expect(learn_link).to_have_attribute("href", "https://dioxuslabs.com/learn/0.7/")
+
+    learn_link.click()
+    page.wait_for_url("https://dioxuslabs.com/learn/0.7/**", timeout=15_000)
+    expect(page).to_have_url(re.compile(r"https://dioxuslabs\.com/learn/0\.7/?"))
 
 
 def test_navbar_navigation_works(page: Page, base_url: str):
