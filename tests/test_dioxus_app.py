@@ -2,10 +2,11 @@
 E2E validation tests for the Pavilion Dioxus blog.
 
 These tests validate that the core app functionality is working:
-- Home page loads and displays content
-- Navigation between Home and Blog routes works
-- App is interactive and hydrated
+- Me tab loads as the default page
+- Navigation between Me, Dialogue, and Misc tabs works
+- Dialogue lists links to blog posts
 - Blog route params render correctly
+- App is interactive and hydrated
 
 To run these tests:
 1. Start the Dioxus server: dx serve --platform web
@@ -28,8 +29,8 @@ def build_url(base_url: str, path: str = "") -> str:
     return urljoin(normalized_base, normalized_path)
 
 
-def test_home_page_loads_and_displays_content(page: Page):
-    """Test that the home page loads successfully and displays content."""
+def test_me_tab_loads_and_displays_content(page: Page):
+    """Test that the default Me tab loads successfully and displays content."""
     page.wait_for_load_state("networkidle")
 
     body = page.locator("body")
@@ -37,12 +38,13 @@ def test_home_page_loads_and_displays_content(page: Page):
 
     navbar = page.locator("#navbar")
     expect(navbar).to_be_visible()
+    expect(navbar.get_by_role("link", name="Me")).to_be_visible()
+    expect(navbar.get_by_role("link", name="Dialogue")).to_be_visible()
+    expect(navbar.get_by_role("link", name="Misc")).to_be_visible()
 
-    hero = page.locator("#hero")
-    expect(hero).to_be_visible()
-
-    echo = page.locator("#echo")
-    expect(echo).to_be_visible()
+    expect(page.locator("#me")).to_be_visible()
+    expect(page.locator("#hero")).to_be_visible()
+    expect(page.locator("#echo")).to_be_visible()
 
 
 def test_home_page_learn_dioxus_link_works(page: Page):
@@ -58,26 +60,58 @@ def test_home_page_learn_dioxus_link_works(page: Page):
     expect(page).to_have_url(re.compile(r"https://dioxuslabs\.com/learn/0\.7/?"))
 
 
-def test_navbar_navigation_works(page: Page, base_url: str):
-    """Test that Home and Blog links in the navbar work correctly."""
+def test_navbar_tabs_navigate(page: Page, base_url: str):
+    """Test that Me, Dialogue, and Misc tabs navigate correctly."""
     page.wait_for_load_state("networkidle")
 
-    home_link = page.locator("#navbar").get_by_role("link", name="Home")
-    blog_link = page.locator("#navbar").get_by_role("link", name="Blog")
-    expect(home_link).to_be_visible()
-    expect(blog_link).to_be_visible()
+    navbar = page.locator("#navbar")
+    me_link = navbar.get_by_role("link", name="Me")
+    dialogue_link = navbar.get_by_role("link", name="Dialogue")
+    misc_link = navbar.get_by_role("link", name="Misc")
 
-    blog_link.click()
+    dialogue_link.click()
     page.wait_for_load_state("networkidle")
-    expect(page).to_have_url(build_url(base_url, "blog/1"))
+    expect(page).to_have_url(build_url(base_url, "dialogue"))
+    expect(page.locator("#dialogue")).to_be_visible()
+    expect(page.get_by_role("heading", name="Dialogue")).to_be_visible()
 
-    heading = page.get_by_role("heading", name="This is blog #1!")
-    expect(heading).to_be_visible()
+    misc_link.click()
+    page.wait_for_load_state("networkidle")
+    expect(page).to_have_url(build_url(base_url, "misc"))
+    expect(page.locator("#misc")).to_be_attached()
 
-    home_link.click()
+    me_link.click()
     page.wait_for_load_state("networkidle")
     expect(page).to_have_url(build_url(base_url))
+    expect(page.locator("#me")).to_be_visible()
     expect(page.locator("#hero")).to_be_visible()
+
+
+def test_dialogue_lists_blog_post_links(page: Page, base_url: str):
+    """Test that Dialogue shows post links and opens a blog post."""
+    page.goto(build_url(base_url, "dialogue"))
+    page.wait_for_load_state("networkidle")
+
+    posts = page.locator("#dialogue-posts")
+    expect(posts).to_be_visible()
+    expect(posts.get_by_role("link", name="Hello, Pavilion")).to_be_visible()
+    expect(posts.get_by_role("link", name="Notes from the workshop")).to_be_visible()
+    expect(posts.get_by_role("link", name="Small and fast")).to_be_visible()
+
+    posts.get_by_role("link", name="Hello, Pavilion").click()
+    page.wait_for_load_state("networkidle")
+    expect(page).to_have_url(build_url(base_url, "blog/1"))
+    expect(page.get_by_role("heading", name="This is blog #1!")).to_be_visible()
+
+
+def test_misc_tab_is_empty(page: Page, base_url: str):
+    """Test that the Misc tab renders an empty placeholder page."""
+    page.goto(build_url(base_url, "misc"))
+    page.wait_for_load_state("networkidle")
+
+    misc = page.locator("#misc")
+    expect(misc).to_be_attached()
+    expect(misc).to_be_empty()
 
 
 def test_blog_route_works(page: Page, base_url: str):
@@ -112,11 +146,11 @@ def test_app_is_fully_hydrated(page: Page, base_url: str):
     body = page.locator("body")
     expect(body).to_be_visible()
 
-    page.locator("#navbar").get_by_role("link", name="Blog").click()
+    page.locator("#navbar").get_by_role("link", name="Dialogue").click()
     page.wait_for_load_state("networkidle")
 
     expect(page.locator("#navbar")).to_be_visible()
-    expect(page).to_have_url(build_url(base_url, "blog/1"))
+    expect(page).to_have_url(build_url(base_url, "dialogue"))
 
 
 def test_echo_server_function(page: Page):
