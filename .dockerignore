@@ -1,0 +1,21 @@
+# Build contexts / caches
+target/
+.venv/
+.git/
+.pytest_cache/
+.ruff_cache/
+playwright-report/
+test-results/
+dx_server.log
+*.log
+
+# Python / editor
+__pycache__/
+.mypy_cache/
+.DS_Store
+
+# Docker artifact staging (runtime image context)
+docker/artifact/server
+docker/artifact/public/
+docker/artifact/**/*
+!docker/artifact/README.md

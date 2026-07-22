@@ -1,0 +1,21 @@
+{
+  "name": "pavilion",
+  "user": "ubuntu",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "install": "rustup target add wasm32-unknown-unknown && cargo fetch && uv sync --extra dev && uv run playwright install chromium",
+  "terminals": [
+    {
+      "name": "dioxus",
+      "command": "dx serve --platform web --port 8080 --hot-reload=false",
+      "description": "Dioxus web server on :8080. Wait for HTTP 200 (not 500) before running Playwright or manual UI checks."
+    }
+  ],
+  "ports": [
+    {
+      "name": "dioxus web",
+      "port": 8080
+    }
+  ]
+}

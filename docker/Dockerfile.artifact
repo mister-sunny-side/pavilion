@@ -1,0 +1,32 @@
+# Runtime-only image: serve a pre-built pavilion-web CI artifact.
+# Build context must be the extracted artifact directory (contains `server` + `public/`).
+# Used by docker/compose.artifact.yml
+#
+# CI builds on ubuntu-latest, so runtime matches Ubuntu 24.04 glibc.
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF-8
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --create-home --uid 10001 pavilion
+
+WORKDIR /app
+
+COPY server /app/server
+COPY public /app/public
+
+RUN chmod +x /app/server && chown -R pavilion:pavilion /app
+
+USER pavilion
+
+ENV IP=0.0.0.0 \
+    PORT=8080 \
+    DIOXUS_PUBLIC_PATH=/app/public
+
+EXPOSE 8080
+
+CMD ["./server"]
