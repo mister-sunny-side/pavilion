@@ -1,0 +1,53 @@
+# Multi-stage image: build Pavilion from source, then serve the release web bundle.
+# Used by docker/compose.local.yml
+
+FROM rust:1-bookworm AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    clang \
+    curl \
+    pkg-config \
+    libssl-dev \
+    binaryen \
+    && rm -rf /var/lib/apt/lists/*
+
+# Dioxus CLI (dx)
+RUN curl -LsSf https://dioxus.dev/install.sh | bash
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+RUN rustup target add wasm32-unknown-unknown
+
+WORKDIR /src
+
+# Cache dependency builds when only app sources change
+COPY Cargo.toml Cargo.lock ./
+COPY Dioxus.toml clippy.toml tailwind.css ./
+COPY assets ./assets
+COPY src ./src
+
+RUN dx build --platform web --release
+
+FROM debian:bookworm-slim AS runtime
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --create-home --uid 10001 pavilion
+
+WORKDIR /app
+
+COPY --from=builder /src/target/dx/pavilion/release/web/server /app/server
+COPY --from=builder /src/target/dx/pavilion/release/web/public /app/public
+
+RUN chown -R pavilion:pavilion /app
+
+USER pavilion
+
+ENV IP=0.0.0.0 \
+    PORT=8080 \
+    DIOXUS_PUBLIC_PATH=/app/public
+
+EXPOSE 8080
+
+CMD ["./server"]

@@ -19,6 +19,7 @@ pavilion/
 │  ├─ components/    # Shared UI (Hero, Echo)
 │  └─ views/         # Home, Blog, Navbar layout
 ├─ tests/            # Playwright e2e tests
+├─ docker/           # Local + artifact Docker/Compose serving
 ├─ .github/workflows # CI
 ├─ Cargo.toml
 ├─ Dioxus.toml
@@ -73,3 +74,23 @@ On pull requests and pushes to `main`/`master`, GitHub Actions:
 3. Starts `dx serve` and runs Playwright e2e tests
 
 On pushes to `main`/`master` only (after lint + e2e pass), a **publish** job builds a release web bundle and uploads it as the `pavilion-web` Actions artifact (`server` binary + `public/` static/WASM assets). Download it from the workflow run’s Artifacts section.
+
+## Docker
+
+Two serving paths under `docker/`:
+
+**Local (build from source)**
+
+```bash
+docker compose -f docker/compose.local.yml up --build
+```
+
+**Published CI artifact**
+
+```bash
+# After a successful master publish job:
+gh run download <run-id> -n pavilion-web -D docker/artifact
+docker compose -f docker/compose.artifact.yml up --build
+```
+
+Both expose the site on http://localhost:8080 (`IP`/`PORT` / `DIOXUS_PUBLIC_PATH` are set for the release `server` binary).
