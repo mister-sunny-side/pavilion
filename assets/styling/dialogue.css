@@ -1,0 +1,47 @@
+#dialogue {
+    max-width: 40rem;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.dialogue-list {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+}
+
+.dialogue-list li {
+    margin: 0.75rem 0;
+}
+
+.dialogue-list a {
+    font-size: 1.125rem;
+    text-decoration: underline;
+}
+
+#dialogue-post {
+    max-width: 40rem;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.dialogue-back {
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+}
+
+.dialogue-article {
+    line-height: 1.6;
+}
+
+.dialogue-article h1,
+.dialogue-article h2,
+.dialogue-article h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.dialogue-article p {
+    margin: 0.75rem 0;
+}

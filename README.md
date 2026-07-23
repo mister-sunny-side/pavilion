@@ -4,27 +4,56 @@ A Rust [Dioxus](https://dioxuslabs.com/) blog with Playwright end-to-end tests a
 
 ## Stack
 
-- **Dioxus 0.7.9** (fullstack + router) — Jumpstart blog scaffold (`/`, `/blog/:id`)
+- **Dioxus 0.7.9** (fullstack + router)
+- Build-time markdown posts via vendored DioxusLabs `include_mdbook` (`mdbook-gen` + `use-mdbook`)
 - **Playwright** via `pytest-playwright` for e2e tests
 - **uv** + **ruff** for Python tooling
 - **GitHub Actions** for format checks, build, and e2e
+
+## Routes
+
+| Path | Page |
+|------|------|
+| `/` | Home |
+| `/dialogue` | Post list |
+| `/dialogue/<slug>` | Markdown post (from `blog-posts/`) |
+| `/matter` | Matter |
+| `/random` | Random |
 
 ## Project layout
 
 ```
 pavilion/
+├─ blog-posts/       # mdBook source (SUMMARY.md + .md posts)
+├─ vendor/           # Vendored include_mdbook packages
 ├─ assets/           # Static assets (favicon, CSS, images)
 ├─ src/
 │  ├─ main.rs        # Entrypoint and route definitions
+│  ├─ blog_book.rs   # CodeBlock + generated BookRoute include
 │  ├─ components/    # Shared UI (Hero, Echo)
-│  └─ views/         # Home, Blog, Navbar layout
+│  └─ views/         # Home, Dialogue, Matter, Random, Navbar
 ├─ tests/            # Playwright e2e tests
 ├─ docker/           # Local + artifact Docker/Compose serving
 ├─ .github/workflows # CI
+├─ build.rs          # mdbook-gen codegen
 ├─ Cargo.toml
 ├─ Dioxus.toml
 └─ pyproject.toml
 ```
+
+## Authoring dialogue posts
+
+1. Add a markdown file under `blog-posts/src/` (for example `my-post.md`).
+2. List it in `blog-posts/src/SUMMARY.md`:
+
+```markdown
+# Summary
+
+- [Welcome](welcome.md)
+- [My Post](my-post.md)
+```
+
+3. Rebuild / let `dx serve` pick up the change. The post appears on `/dialogue` and at `/dialogue/my-post`.
 
 ## Prerequisites
 

@@ -3,9 +3,9 @@ E2E validation tests for the Pavilion Dioxus blog.
 
 These tests validate that the core app functionality is working:
 - Home page loads and displays content
-- Navigation between Home and Blog routes works
+- Navigation between Home, Dialogue, Matter, and Random works
 - App is interactive and hydrated
-- Blog route params render correctly
+- Dialogue lists build-time markdown posts and opens them
 
 To run these tests:
 1. Start the Dioxus server: dx serve --platform web
@@ -59,20 +59,34 @@ def test_home_page_learn_dioxus_link_works(page: Page):
 
 
 def test_navbar_navigation_works(page: Page, base_url: str):
-    """Test that Home and Blog links in the navbar work correctly."""
+    """Test that navbar links navigate to Dialogue, Matter, Random, and Home."""
     page.wait_for_load_state("networkidle")
 
-    home_link = page.locator("#navbar").get_by_role("link", name="Home")
-    blog_link = page.locator("#navbar").get_by_role("link", name="Blog")
+    navbar = page.locator("#navbar")
+    home_link = navbar.get_by_role("link", name="Home")
+    dialogue_link = navbar.get_by_role("link", name="Dialogue")
+    matter_link = navbar.get_by_role("link", name="Matter")
+    random_link = navbar.get_by_role("link", name="Random")
+
     expect(home_link).to_be_visible()
-    expect(blog_link).to_be_visible()
+    expect(dialogue_link).to_be_visible()
+    expect(matter_link).to_be_visible()
+    expect(random_link).to_be_visible()
 
-    blog_link.click()
+    dialogue_link.click()
     page.wait_for_load_state("networkidle")
-    expect(page).to_have_url(build_url(base_url, "blog/1"))
+    expect(page).to_have_url(re.compile(r".*/dialogue/?$"))
+    expect(page.locator("#dialogue")).to_be_visible()
 
-    heading = page.get_by_role("heading", name="This is blog #1!")
-    expect(heading).to_be_visible()
+    matter_link.click()
+    page.wait_for_load_state("networkidle")
+    expect(page).to_have_url(build_url(base_url, "matter"))
+    expect(page.locator("#matter")).to_be_visible()
+
+    random_link.click()
+    page.wait_for_load_state("networkidle")
+    expect(page).to_have_url(build_url(base_url, "random"))
+    expect(page.locator("#random")).to_be_visible()
 
     home_link.click()
     page.wait_for_load_state("networkidle")
@@ -80,29 +94,37 @@ def test_navbar_navigation_works(page: Page, base_url: str):
     expect(page.locator("#hero")).to_be_visible()
 
 
-def test_blog_route_works(page: Page, base_url: str):
-    """Test that navigating directly to a blog route works."""
-    page.goto(build_url(base_url, "blog/42"))
+def test_dialogue_lists_and_opens_posts(page: Page, base_url: str):
+    """Test that Dialogue lists markdown posts and opens the welcome post."""
+    page.goto(build_url(base_url, "dialogue"))
     page.wait_for_load_state("networkidle")
 
-    expect(page).to_have_url(build_url(base_url, "blog/42"))
-    expect(page.locator("#blog")).to_be_visible()
-    expect(page.get_by_role("heading", name="This is blog #42!")).to_be_visible()
+    expect(page.locator("#dialogue")).to_be_visible()
+    welcome_link = page.locator("#dialogue").get_by_role("link", name="Welcome")
+    expect(welcome_link).to_be_visible()
 
-
-def test_blog_prev_next_navigation(page: Page, base_url: str):
-    """Test that Previous/Next links on the blog page update the route."""
-    page.goto(build_url(base_url, "blog/1"))
+    welcome_link.click()
     page.wait_for_load_state("networkidle")
+    expect(page).to_have_url(re.compile(r".*/dialogue/welcome/?$"))
+    expect(page.locator("#dialogue-post")).to_be_visible()
+    expect(page.get_by_role("heading", name="Welcome")).to_be_visible()
 
-    page.get_by_role("link", name="Next").click()
+    page.locator("#dialogue-post").get_by_role("link", name="Back to dialogue").click()
     page.wait_for_load_state("networkidle")
-    expect(page).to_have_url(build_url(base_url, "blog/2"))
-    expect(page.get_by_role("heading", name="This is blog #2!")).to_be_visible()
+    expect(page).to_have_url(re.compile(r".*/dialogue/?$"))
 
-    page.get_by_role("link", name="Previous").click()
+
+def test_matter_and_random_routes(page: Page, base_url: str):
+    """Test direct navigation to Matter and Random pages."""
+    page.goto(build_url(base_url, "matter"))
     page.wait_for_load_state("networkidle")
-    expect(page).to_have_url(build_url(base_url, "blog/1"))
+    expect(page.locator("#matter")).to_be_visible()
+    expect(page.get_by_role("heading", name="Matter")).to_be_visible()
+
+    page.goto(build_url(base_url, "random"))
+    page.wait_for_load_state("networkidle")
+    expect(page.locator("#random")).to_be_visible()
+    expect(page.get_by_role("heading", name="Random")).to_be_visible()
 
 
 def test_app_is_fully_hydrated(page: Page, base_url: str):
@@ -112,11 +134,11 @@ def test_app_is_fully_hydrated(page: Page, base_url: str):
     body = page.locator("body")
     expect(body).to_be_visible()
 
-    page.locator("#navbar").get_by_role("link", name="Blog").click()
+    page.locator("#navbar").get_by_role("link", name="Dialogue").click()
     page.wait_for_load_state("networkidle")
 
     expect(page.locator("#navbar")).to_be_visible()
-    expect(page).to_have_url(build_url(base_url, "blog/1"))
+    expect(page).to_have_url(re.compile(r".*/dialogue/?$"))
 
 
 def test_echo_server_function(page: Page):
