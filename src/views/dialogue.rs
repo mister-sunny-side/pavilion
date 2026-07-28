@@ -1,4 +1,4 @@
-use crate::blog_book::BookRoute;
+use crate::components::{DialogueIndexLink, PostList};
 use crate::Route;
 use dioxus::prelude::*;
 
@@ -12,18 +12,10 @@ pub fn Dialogue() -> Element {
 
         div {
             id: "dialogue",
+            class: "page",
             h1 { "Dialogue" }
             p { "Posts compiled from markdown at build time." }
-            ul { class: "dialogue-list",
-                for route in BookRoute::static_routes() {
-                    li {
-                        Link {
-                            to: Route::DialoguePost { child: route },
-                            "{route.page().title}"
-                        }
-                    }
-                }
-            }
+            PostList {}
         }
     }
 }
@@ -36,11 +28,8 @@ pub fn DialoguePost() -> Element {
 
         div {
             id: "dialogue-post",
-            Link {
-                to: Route::Dialogue {},
-                class: "dialogue-back",
-                "Back to dialogue"
-            }
+            class: "page",
+            DialogueIndexLink {}
             article { class: "dialogue-article markdown-body",
                 Outlet::<Route> {}
             }

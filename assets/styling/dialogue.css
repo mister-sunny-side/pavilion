@@ -1,9 +1,3 @@
-#dialogue {
-    max-width: 40rem;
-    margin: 2rem auto;
-    padding: 0 1rem;
-}
-
 .dialogue-list {
     list-style: none;
     padding: 0;
@@ -17,12 +11,6 @@
 .dialogue-list a {
     font-size: 1.125rem;
     text-decoration: underline;
-}
-
-#dialogue-post {
-    max-width: 40rem;
-    margin: 2rem auto;
-    padding: 0 1rem;
 }
 
 .dialogue-back {

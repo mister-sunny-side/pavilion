@@ -14,24 +14,24 @@ A Rust [Dioxus](https://dioxuslabs.com/) blog with Playwright end-to-end tests a
 
 | Path | Page |
 |------|------|
-| `/` | Home |
+| `/` | Hello |
 | `/dialogue` | Post list |
 | `/dialogue/<slug>` | Markdown post (from `blog-posts/`) |
-| `/matter` | Matter |
 | `/random` | Random |
 
 ## Project layout
 
 ```
 pavilion/
+├─ pages/            # Standalone markdown pages (e.g. hello.md)
 ├─ blog-posts/       # mdBook source (SUMMARY.md + .md posts)
 ├─ vendor/           # Vendored include_mdbook packages
 ├─ assets/           # Static assets (favicon, CSS, images)
 ├─ src/
 │  ├─ main.rs        # Entrypoint and route definitions
 │  ├─ blog_book.rs   # CodeBlock + generated BookRoute include
-│  ├─ components/    # Shared UI (Hero, Echo)
-│  └─ views/         # Home, Dialogue, Matter, Random, Navbar
+│  ├─ components/    # Shared UI (PostLink, PostList, …)
+│  └─ views/         # Hello, Dialogue, Random, Navbar
 ├─ tests/            # Playwright e2e tests
 ├─ docker/           # Local + artifact Docker/Compose serving
 ├─ .github/workflows # CI
@@ -40,6 +40,10 @@ pavilion/
 ├─ Dioxus.toml
 └─ pyproject.toml
 ```
+
+## Authoring the Hello page
+
+Edit `pages/hello.md`. The first `# Heading` becomes the page title; remaining paragraphs become the body. Rebuild (or let `dx serve` reload) to see changes.
 
 ## Authoring dialogue posts
 

@@ -1,11 +1,25 @@
+#app-shell {
+  position: relative;
+  min-height: calc(100vh - 40px);
+}
+
 #navbar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* Sit just left of the centered 65ch content column */
+  left: max(0.25rem, calc((100% - 65ch) / 2 - 3.5rem));
+  transform: translateX(-100%);
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 0 0.75rem 0 0;
+  z-index: 1;
 }
 
 #navbar a {
   color: #ffffff;
-  margin-right: 20px;
   text-decoration: none;
   transition: color 0.2s ease;
 }
@@ -13,4 +27,38 @@
 #navbar a:hover {
   cursor: pointer;
   color: #91a4d2;
+}
+
+#content {
+  min-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 48rem) {
+  #app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 24px);
+  }
+
+  #navbar {
+    position: sticky;
+    top: 0;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 0.75rem 0;
+    width: 100%;
+    background-color: #0f1116;
+  }
+
+  #content {
+    flex: 1;
+    min-height: 0;
+  }
 }

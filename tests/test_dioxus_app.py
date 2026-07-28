@@ -2,10 +2,11 @@
 E2E validation tests for the Pavilion Dioxus blog.
 
 These tests validate that the core app functionality is working:
-- Home page loads and displays content
-- Navigation between Home, Dialogue, Matter, and Random works
+- Default ("Hello") page loads and displays content
+- Navigation between Hello, Dialogue, and Random works
 - App is interactive and hydrated
 - Dialogue lists build-time markdown posts and opens them
+- Navbar is a side rail on desktop and a top bar on mobile
 
 To run these tests:
 1. Start the Dioxus server: dx serve --platform web
@@ -16,6 +17,11 @@ import re
 from urllib.parse import urljoin
 
 from playwright.sync_api import Page, expect
+
+# Keep in sync with `@media (max-width: 48rem)` in assets/styling/navbar.css
+MOBILE_BREAKPOINT_PX = 768
+DESKTOP_VIEWPORT = {"width": 1280, "height": 720}
+MOBILE_VIEWPORT = {"width": 390, "height": 844}
 
 
 def build_url(base_url: str, path: str = "") -> str:
@@ -28,8 +34,8 @@ def build_url(base_url: str, path: str = "") -> str:
     return urljoin(normalized_base, normalized_path)
 
 
-def test_home_page_loads_and_displays_content(page: Page):
-    """Test that the home page loads successfully and displays content."""
+def test_hello_page_loads_as_default(page: Page, base_url: str):
+    """Test that the default route loads the hello page successfully."""
     page.wait_for_load_state("networkidle")
 
     body = page.locator("body")
@@ -38,60 +44,40 @@ def test_home_page_loads_and_displays_content(page: Page):
     navbar = page.locator("#navbar")
     expect(navbar).to_be_visible()
 
-    hero = page.locator("#hero")
-    expect(hero).to_be_visible()
-
-    echo = page.locator("#echo")
-    expect(echo).to_be_visible()
-
-
-def test_home_page_learn_dioxus_link_works(page: Page):
-    """Test that the Learn Dioxus hero link is present and navigates correctly."""
-    page.wait_for_load_state("networkidle")
-
-    learn_link = page.locator("#hero #links").get_by_role("link", name="Learn Dioxus")
-    expect(learn_link).to_be_visible()
-    expect(learn_link).to_have_attribute("href", "https://dioxuslabs.com/learn/0.7/")
-
-    learn_link.click()
-    page.wait_for_url("https://dioxuslabs.com/learn/0.7/**", timeout=15_000)
-    expect(page).to_have_url(re.compile(r"https://dioxuslabs\.com/learn/0\.7/?"))
+    expect(page).to_have_url(build_url(base_url))
+    expect(page.locator("#hello")).to_be_visible()
+    expect(page.get_by_role("heading", name="Sam Miller")).to_be_visible()
+    expect(page.locator("#hello").get_by_text("Hello Folks!", exact=False)).to_be_visible()
 
 
 def test_navbar_navigation_works(page: Page, base_url: str):
-    """Test that navbar links navigate to Dialogue, Matter, Random, and Home."""
+    """Test that navbar links navigate to Hello, Dialogue, and Random."""
     page.wait_for_load_state("networkidle")
 
     navbar = page.locator("#navbar")
-    home_link = navbar.get_by_role("link", name="Home")
+    hello_link = navbar.get_by_role("link", name="Hello")
     dialogue_link = navbar.get_by_role("link", name="Dialogue")
-    matter_link = navbar.get_by_role("link", name="Matter")
     random_link = navbar.get_by_role("link", name="Random")
 
-    expect(home_link).to_be_visible()
+    expect(hello_link).to_be_visible()
     expect(dialogue_link).to_be_visible()
-    expect(matter_link).to_be_visible()
     expect(random_link).to_be_visible()
+    expect(navbar.get_by_role("link", name="Home")).to_have_count(0)
 
     dialogue_link.click()
     page.wait_for_load_state("networkidle")
     expect(page).to_have_url(re.compile(r".*/dialogue/?$"))
     expect(page.locator("#dialogue")).to_be_visible()
 
-    matter_link.click()
-    page.wait_for_load_state("networkidle")
-    expect(page).to_have_url(build_url(base_url, "matter"))
-    expect(page.locator("#matter")).to_be_visible()
-
     random_link.click()
     page.wait_for_load_state("networkidle")
     expect(page).to_have_url(build_url(base_url, "random"))
     expect(page.locator("#random")).to_be_visible()
 
-    home_link.click()
+    hello_link.click()
     page.wait_for_load_state("networkidle")
     expect(page).to_have_url(build_url(base_url))
-    expect(page.locator("#hero")).to_be_visible()
+    expect(page.locator("#hello")).to_be_visible()
 
 
 def test_dialogue_lists_and_opens_posts(page: Page, base_url: str):
@@ -114,13 +100,8 @@ def test_dialogue_lists_and_opens_posts(page: Page, base_url: str):
     expect(page).to_have_url(re.compile(r".*/dialogue/?$"))
 
 
-def test_matter_and_random_routes(page: Page, base_url: str):
-    """Test direct navigation to Matter and Random pages."""
-    page.goto(build_url(base_url, "matter"))
-    page.wait_for_load_state("networkidle")
-    expect(page.locator("#matter")).to_be_visible()
-    expect(page.get_by_role("heading", name="Matter")).to_be_visible()
-
+def test_random_route(page: Page, base_url: str):
+    """Test direct navigation to the Random page."""
     page.goto(build_url(base_url, "random"))
     page.wait_for_load_state("networkidle")
     expect(page.locator("#random")).to_be_visible()
@@ -141,13 +122,84 @@ def test_app_is_fully_hydrated(page: Page, base_url: str):
     expect(page).to_have_url(re.compile(r".*/dialogue/?$"))
 
 
-def test_echo_server_function(page: Page):
-    """Test that the fullstack echo server function responds to input."""
+def test_navbar_is_side_rail_on_desktop(page: Page):
+    """On wide viewports the navbar is a vertical rail beside the content."""
+    page.set_viewport_size(DESKTOP_VIEWPORT)
     page.wait_for_load_state("networkidle")
 
-    echo_input = page.locator("#echo input")
-    expect(echo_input).to_be_visible()
+    navbar = page.locator("#navbar")
+    expect(navbar).to_be_visible()
 
-    echo_input.fill("pavilion")
-    expect(page.locator("#echo").get_by_text("Server echoed:")).to_be_visible(timeout=10_000)
-    expect(page.locator("#echo").get_by_text("pavilion")).to_be_visible()
+    flex_direction = navbar.evaluate("el => getComputedStyle(el).flexDirection")
+    assert flex_direction == "column"
+
+    hello = navbar.get_by_role("link", name="Hello").bounding_box()
+    dialogue = navbar.get_by_role("link", name="Dialogue").bounding_box()
+    page_column = page.locator(".page").first.bounding_box()
+    assert hello is not None
+    assert dialogue is not None
+    assert page_column is not None
+
+    # Links stack vertically in one column.
+    assert hello["y"] < dialogue["y"]
+    assert abs(hello["x"] - dialogue["x"]) < 8
+
+    # Rail sits to the left of the centered content column.
+    assert hello["x"] + hello["width"] <= page_column["x"] + 1
+
+
+def test_navbar_is_top_bar_on_mobile(page: Page):
+    """On narrow viewports the navbar becomes a horizontal top bar."""
+    page.set_viewport_size(MOBILE_VIEWPORT)
+    page.wait_for_load_state("networkidle")
+
+    navbar = page.locator("#navbar")
+    expect(navbar).to_be_visible()
+
+    flex_direction = navbar.evaluate("el => getComputedStyle(el).flexDirection")
+    assert flex_direction == "row"
+
+    hello = navbar.get_by_role("link", name="Hello").bounding_box()
+    dialogue = navbar.get_by_role("link", name="Dialogue").bounding_box()
+    nav_box = navbar.bounding_box()
+    content = page.locator("#content").bounding_box()
+    assert hello is not None
+    assert dialogue is not None
+    assert nav_box is not None
+    assert content is not None
+
+    # Links sit in a horizontal row.
+    assert hello["x"] < dialogue["x"]
+    assert abs(hello["y"] - dialogue["y"]) < 8
+
+    # Bar sits above the content.
+    assert nav_box["y"] + nav_box["height"] <= content["y"] + 1
+
+
+def test_navbar_layout_switches_across_breakpoint(page: Page):
+    """Navbar orientation flips when crossing the mobile breakpoint."""
+    page.wait_for_load_state("networkidle")
+    navbar = page.locator("#navbar")
+
+    page.set_viewport_size({"width": MOBILE_BREAKPOINT_PX + 1, "height": 800})
+    assert navbar.evaluate("el => getComputedStyle(el).flexDirection") == "column"
+
+    page.set_viewport_size({"width": MOBILE_BREAKPOINT_PX, "height": 800})
+    assert navbar.evaluate("el => getComputedStyle(el).flexDirection") == "row"
+
+
+def test_navbar_navigation_works_on_mobile(page: Page, base_url: str):
+    """Top-bar links remain interactive on mobile viewports."""
+    page.set_viewport_size(MOBILE_VIEWPORT)
+    page.wait_for_load_state("networkidle")
+
+    navbar = page.locator("#navbar")
+    navbar.get_by_role("link", name="Dialogue").click()
+    page.wait_for_load_state("networkidle")
+    expect(page).to_have_url(re.compile(r".*/dialogue/?$"))
+    expect(page.locator("#dialogue")).to_be_visible()
+
+    navbar.get_by_role("link", name="Hello").click()
+    page.wait_for_load_state("networkidle")
+    expect(page).to_have_url(build_url(base_url))
+    expect(page.locator("#hello")).to_be_visible()

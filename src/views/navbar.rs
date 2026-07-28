@@ -10,25 +10,27 @@ pub fn Navbar() -> Element {
         document::Link { rel: "stylesheet", href: NAVBAR_CSS }
 
         div {
-            id: "navbar",
-            Link {
-                to: Route::Home {},
-                "Home"
+            id: "app-shell",
+            div {
+                id: "navbar",
+                Link {
+                    to: Route::Hello {},
+                    "Hello"
+                }
+                Link {
+                    to: Route::Dialogue {},
+                    "Dialogue"
+                }
+                Link {
+                    to: Route::Random {},
+                    "Random"
+                }
             }
-            Link {
-                to: Route::Dialogue {},
-                "Dialogue"
-            }
-            Link {
-                to: Route::Matter {},
-                "Matter"
-            }
-            Link {
-                to: Route::Random {},
-                "Random"
+
+            div {
+                id: "content",
+                Outlet::<Route> {}
             }
         }
-
-        Outlet::<Route> {}
     }
 }
