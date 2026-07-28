@@ -2,29 +2,38 @@
 // need dioxus
 use dioxus::prelude::*;
 
-use views::{Blog, Dialogue, Me, Misc, Navbar};
+use views::{Dialogue, DialoguePost, Hello, Navbar, Random};
 
+/// Build-time generated blog post router from `blog-posts/`.
+mod blog_book;
 /// Define a components module that contains all shared components for our app.
 mod components;
 /// Define a views module that contains the UI for all Layouts and Routes for our app.
 mod views;
 
-/// App routes. Tab pages live under the shared [`Navbar`] layout; individual posts keep `/blog/:id`.
+/// The Route enum is used to define the structure of internal routes in our app. All route enums need to derive
+/// the [`Routable`] trait, which provides the necessary methods for the router to work.
+///
+/// Each variant represents a different URL pattern that can be matched by the router. If that pattern is matched,
+/// the components for that route will be rendered.
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
 enum Route {
     #[layout(Navbar)]
-        /// Default tab — Me
         #[route("/")]
-        Me {},
-        /// Blog post index
-        #[route("/dialogue")]
-        Dialogue {},
-        /// Placeholder tab
-        #[route("/misc")]
-        Misc {},
-        #[route("/blog/:id")]
-        Blog { id: i32 },
+        Hello {},
+
+        #[nest("/dialogue")]
+            #[route("/")]
+            Dialogue {},
+            #[layout(DialoguePost)]
+                #[child("")]
+                DialoguePost { child: blog_book::BookRoute },
+            #[end_layout]
+        #[end_nest]
+
+        #[route("/random")]
+        Random {},
 }
 
 // We can import assets in dioxus with the `asset!` macro. This macro takes a path to an asset relative to the crate root.
@@ -51,6 +60,10 @@ fn App() -> Element {
         // In addition to element and text (which we will see later), rsx can contain other components. In this case,
         // we are using the `document::Link` component to add a link to our favicon and main CSS file into the head of our app.
         document::Link { rel: "icon", href: FAVICON }
+        document::Link {
+            rel: "stylesheet",
+            href: "https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap",
+        }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 

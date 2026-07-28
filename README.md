@@ -1,37 +1,63 @@
 # Pavilion
 
-A small, simple, fast blogging site built with [Dioxus](https://dioxuslabs.com/).
-
-Pavilion aims to stay lightweight: write posts, publish them, and keep the surface area small. The current app is a Jumpstart fullstack scaffold (`/`, `/blog/:id`) with Playwright e2e coverage and GitHub Actions CI.
-
-## Roadmap
-
-- **Markdown posts** — render simple markdown files into clean blog posts
-- **Basic comments** — add lightweight commenting once posts are markdown-backed
+A Rust [Dioxus](https://dioxuslabs.com/) blog with Playwright end-to-end tests and GitHub Actions CI.
 
 ## Stack
 
 - **Dioxus 0.7.9** (fullstack + router)
+- Build-time markdown posts via vendored DioxusLabs `include_mdbook` (`mdbook-gen` + `use-mdbook`)
 - **Playwright** via `pytest-playwright` for e2e tests
 - **uv** + **ruff** for Python tooling
 - **GitHub Actions** for format checks, build, and e2e
+
+## Routes
+
+| Path | Page |
+|------|------|
+| `/` | Hello |
+| `/dialogue` | Post list |
+| `/dialogue/<slug>` | Markdown post (from `blog-posts/`) |
+| `/random` | Random |
 
 ## Project layout
 
 ```
 pavilion/
+├─ pages/            # Standalone markdown pages (e.g. hello.md)
+├─ blog-posts/       # mdBook source (SUMMARY.md + .md posts)
+├─ vendor/           # Vendored include_mdbook packages
 ├─ assets/           # Static assets (favicon, CSS, images)
 ├─ src/
 │  ├─ main.rs        # Entrypoint and route definitions
-│  ├─ components/    # Shared UI (Hero, Echo)
-│  └─ views/         # Home, Blog, Navbar layout
+│  ├─ blog_book.rs   # CodeBlock + generated BookRoute include
+│  ├─ components/    # Shared UI (PostLink, PostList, …)
+│  └─ views/         # Hello, Dialogue, Random, Navbar
 ├─ tests/            # Playwright e2e tests
 ├─ docker/           # Local + artifact Docker/Compose serving
 ├─ .github/workflows # CI
+├─ build.rs          # mdbook-gen codegen
 ├─ Cargo.toml
 ├─ Dioxus.toml
 └─ pyproject.toml
 ```
+
+## Authoring the Hello page
+
+Edit `pages/hello.md`. The first `# Heading` becomes the page title; remaining paragraphs become the body. Rebuild (or let `dx serve` reload) to see changes.
+
+## Authoring dialogue posts
+
+1. Add a markdown file under `blog-posts/src/` (for example `my-post.md`).
+2. List it in `blog-posts/src/SUMMARY.md`:
+
+```markdown
+# Summary
+
+- [Welcome](welcome.md)
+- [My Post](my-post.md)
+```
+
+3. Rebuild / let `dx serve` pick up the change. The post appears on `/dialogue` and at `/dialogue/my-post`.
 
 ## Prerequisites
 

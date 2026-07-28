@@ -1,16 +1,17 @@
-//! Layouts and route views for Pavilion.
-
-mod me;
-pub use me::Me;
+//! The views module contains the components for all Layouts and Routes for our app. Each layout and route in our [`Route`]
+//! enum will render one of these components.
+//!
+//! The [`Navbar`] component will be rendered on all pages of our app since every page is under the layout. The layout defines
+//! a common wrapper around all child routes.
 
 mod dialogue;
-pub use dialogue::Dialogue;
+pub use dialogue::{Dialogue, DialoguePost};
 
-mod misc;
-pub use misc::Misc;
+mod hello;
+pub use hello::Hello;
 
-mod blog;
-pub use blog::Blog;
+mod random;
+pub use random::Random;
 
 mod navbar;
 pub use navbar::Navbar;

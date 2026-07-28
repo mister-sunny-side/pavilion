@@ -1,35 +1,35 @@
-#dialogue {
-  max-width: 40rem;
+.dialogue-list {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
 }
 
-#dialogue h1 {
-  margin-bottom: 0.25rem;
+.dialogue-list li {
+    margin: 0.75rem 0;
 }
 
-#dialogue p {
-  margin-top: 0;
-  color: #a8b0c0;
+.dialogue-list a {
+    font-size: 1.125rem;
+    text-decoration: underline;
 }
 
-#dialogue-posts {
-  list-style: none;
-  padding: 0;
-  margin: 1.5rem 0 0;
+.dialogue-back {
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
 }
 
-#dialogue-posts li {
-  margin: 0.75rem 0;
+.dialogue-article {
+    line-height: 1.6;
 }
 
-#dialogue-posts a {
-  color: #ffffff;
-  text-decoration: none;
-  border-bottom: 1px solid #3a4254;
-  padding-bottom: 0.15rem;
-  transition: color 0.2s ease, border-color 0.2s ease;
+.dialogue-article h1,
+.dialogue-article h2,
+.dialogue-article h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
 }
 
-#dialogue-posts a:hover {
-  color: #91a4d2;
-  border-color: #91a4d2;
+.dialogue-article p {
+    margin: 0.75rem 0;
 }

@@ -266,7 +266,7 @@ The initial UI rendered by the component on the client must be identical to the 
 
 # Cursor Cloud specific instructions
 
-Cloud Agents use `.cursor/environment.json` + `.cursor/Dockerfile` (Rust stable, `wasm32-unknown-unknown`, `dx`, `uv`, Playwright Chromium). The `dioxus` terminal starts `dx serve` on port 8080.
+Cloud Agents use `.cursor/environment.json` + `.cursor/Dockerfile` (Rust stable, `wasm32-unknown-unknown`, pinned `dioxus-cli` 0.7.9, `uv`, Playwright Chromium). The image reuses the stock `ubuntu` user from `ubuntu:24.04` (do not `useradd ubuntu`). The `dioxus` terminal starts `dx serve` on port 8080.
 
 ## Verify before e2e
 

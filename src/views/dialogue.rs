@@ -1,16 +1,10 @@
+use crate::components::{DialogueIndexLink, PostList};
 use crate::Route;
 use dioxus::prelude::*;
 
 const DIALOGUE_CSS: Asset = asset!("/assets/styling/dialogue.css");
 
-/// Placeholder posts until markdown-backed content lands.
-const POSTS: &[(i32, &str)] = &[
-    (1, "Hello, Pavilion"),
-    (2, "Notes from the workshop"),
-    (3, "Small and fast"),
-];
-
-/// The Dialogue tab — index of blog post links.
+/// Post index for markdown pages under `blog-posts/`.
 #[component]
 pub fn Dialogue() -> Element {
     rsx! {
@@ -18,18 +12,26 @@ pub fn Dialogue() -> Element {
 
         div {
             id: "dialogue",
+            class: "page",
             h1 { "Dialogue" }
-            p { "Posts and conversations." }
-            ul {
-                id: "dialogue-posts",
-                for (id, title) in POSTS {
-                    li {
-                        Link {
-                            to: Route::Blog { id: *id },
-                            "{title}"
-                        }
-                    }
-                }
+            p { "Posts compiled from markdown at build time." }
+            PostList {}
+        }
+    }
+}
+
+/// Layout wrapper around a single generated blog post page.
+#[component]
+pub fn DialoguePost() -> Element {
+    rsx! {
+        document::Link { rel: "stylesheet", href: DIALOGUE_CSS }
+
+        div {
+            id: "dialogue-post",
+            class: "page",
+            DialogueIndexLink {}
+            article { class: "dialogue-article markdown-body",
+                Outlet::<Route> {}
             }
         }
     }

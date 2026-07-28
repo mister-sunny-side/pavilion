@@ -1,12 +1,22 @@
 # Pavilion cloud agent base image.
 # Toolchains only — Cursor checks out the repo; do not COPY the project.
+#
+# ubuntu:24.04 already ships a non-root `ubuntu` user (UID 1000). Reuse it —
+# do not useradd, or the image build fails.
+# Official dx install.sh binaries can be glibc-picky; pin dioxus-cli via cargo
+# (same approach as docker/Dockerfile.local).
+
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
-    LANG=C.UTF-8
+    LANG=C.UTF-8 \
+    CARGO_NET_RETRY=10 \
+    CARGO_HTTP_TIMEOUT=600 \
+    CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    binaryen \
     ca-certificates \
     clang \
     curl \
@@ -17,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-venv \
     sudo \
+    unzip \
     # Playwright / Chromium runtime libs
     libasound2t64 \
     libatk-bridge2.0-0 \
@@ -42,10 +53,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-liberation \
     fonts-noto-color-emoji \
     xdg-utils \
-    && rm -rf /var/lib/apt/lists/*
-
-# Non-root user (matches environment.json "user")
-RUN useradd -m -s /bin/bash ubuntu \
+    && rm -rf /var/lib/apt/lists/* \
+    # Passwordless sudo for the stock ubuntu user (matches environment.json)
     && echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/ubuntu \
     && chmod 0440 /etc/sudoers.d/ubuntu
 
@@ -62,8 +71,8 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
     && rustup target add wasm32-unknown-unknown \
     && rustup component add rustfmt clippy
 
-# Dioxus CLI (dx)
-RUN curl -LsSf https://dioxus.dev/install.sh | bash \
+# Pin dx to the project Dioxus version; cargo-install links against this image's glibc.
+RUN cargo install dioxus-cli --version 0.7.9 --locked \
     && dx --version
 
 # uv

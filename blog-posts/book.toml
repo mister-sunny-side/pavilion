@@ -1,0 +1,8 @@
+[book]
+title = "Pavilion Dialogue"
+description = "Blog posts for Pavilion"
+authors = ["Pavilion"]
+language = "en"
+
+[rust]
+edition = "2021"
