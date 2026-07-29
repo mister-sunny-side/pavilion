@@ -4068,6 +4068,7 @@ dependencies = [
  "dioxus",
  "dioxus-router",
  "mdbook-gen",
+ "rand 0.9.5",
  "serde",
  "use-mdbook",
 ]
