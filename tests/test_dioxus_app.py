@@ -101,11 +101,27 @@ def test_dialogue_lists_and_opens_posts(page: Page, base_url: str):
 
 
 def test_random_route(page: Page, base_url: str):
-    """Test direct navigation to the Random page."""
+    """Test direct navigation to the Random page and server-generated number."""
     page.goto(build_url(base_url, "random"))
     page.wait_for_load_state("networkidle")
     expect(page.locator("#random")).to_be_visible()
     expect(page.get_by_role("heading", name="Random")).to_be_visible()
+
+    number = page.locator("#random-number")
+    expect(number).to_be_visible(timeout=15000)
+    value = int(number.inner_text())
+    assert 0 <= value < 1_000_000
+
+    roll_button = page.locator("#random-roll")
+    expect(roll_button).to_be_visible()
+    first_value = value
+    roll_button.click()
+    page.wait_for_function(
+        f"() => document.querySelector('#random-number')?.textContent.trim() !== '{first_value}'",
+        timeout=15000,
+    )
+    second_value = int(number.inner_text())
+    assert 0 <= second_value < 1_000_000
 
 
 def test_app_is_fully_hydrated(page: Page, base_url: str):
