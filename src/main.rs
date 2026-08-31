@@ -6,10 +6,10 @@ use views::{Dialogue, DialoguePost, Hello, Navbar, Random};
 
 /// Build-time generated blog post router from `blog-posts/`.
 mod blog_book;
-/// Server functions for fullstack endpoints.
-mod server;
 /// Define a components module that contains all shared components for our app.
 mod components;
+/// Server functions for fullstack endpoints.
+mod server;
 /// Define a views module that contains the UI for all Layouts and Routes for our app.
 mod views;
 
