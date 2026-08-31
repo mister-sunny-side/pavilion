@@ -30,4 +30,3 @@ dx_server.log
 # Staged CI artifacts for docker/compose.artifact.yml
 docker/artifact/server
 docker/artifact/public/
-

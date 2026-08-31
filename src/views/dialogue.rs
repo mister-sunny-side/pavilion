@@ -12,7 +12,7 @@ pub fn Dialogue() -> Element {
 
         div {
             id: "dialogue",
-            class: "page",
+            class: "page page-center",
             h1 { "Dialogue" }
             p { "Posts compiled from markdown at build time." }
             PostList {}

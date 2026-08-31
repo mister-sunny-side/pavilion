@@ -14,7 +14,7 @@ pub fn Random() -> Element {
     rsx! {
         div {
             id: "random",
-            class: "page",
+            class: "page page-center",
             h1 { "Random" }
             p { "This number was generated on the server:" }
             match number() {

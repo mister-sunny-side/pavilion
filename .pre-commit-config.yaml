@@ -22,12 +22,17 @@ repos:
         pass_filenames: true
         always_run: false
 
-  # Rustfmt for Rust code formatting
-  - repo: https://github.com/doublify/pre-commit-rust
-    rev: v1.0
+  # Rustfmt for Rust code formatting (matches CI: cargo fmt --all -- --check).
+  # pass_filenames: false so rustfmt.toml reorder_modules/etc. apply workspace-wide,
+  # not only to staged files — otherwise CI can fail on untouched modules.
+  - repo: local
     hooks:
-      - id: fmt
-        args: [--all, --]
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --all
+        language: system
+        files: \.rs$
+        pass_filenames: false
 
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks

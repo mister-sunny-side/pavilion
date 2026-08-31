@@ -10,13 +10,33 @@
 
 .dialogue-list a {
     font-size: 1.125rem;
+    color: var(--accent);
     text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+
+.dialogue-list a:hover {
+    color: var(--accent-hover);
 }
 
 .dialogue-back {
     display: inline-block;
     margin-bottom: 1.5rem;
     font-size: 0.875rem;
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.dialogue-back:hover {
+    color: var(--accent-hover);
+}
+
+.dialogue-article a {
+    color: var(--accent);
+}
+
+.dialogue-article a:hover {
+    color: var(--accent-hover);
 }
 
 .dialogue-article {
