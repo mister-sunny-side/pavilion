@@ -11,4 +11,4 @@ This blog will chronicle the projects under the domain of Sunny Side Technologie
 
 
 
-Open source is wonderful, but behind every line of code is a story. This blog, "The Pavilion", is meant to foster discussion around the code that powers Sunny Side Tech.
+Open source is wonderful, but behind every line of code is a story. This blog "The Pavilion", is meant to foster discussion around the code that powers Sunny Side Tech.
