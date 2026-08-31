@@ -18,10 +18,32 @@ from urllib.parse import urljoin
 
 from playwright.sync_api import Page, expect
 
-# Keep in sync with `@media (max-width: 48rem)` in assets/styling/navbar.css
-MOBILE_BREAKPOINT_PX = 768
+# Extreme viewports for layout smoke tests (side rail vs top bar).
 DESKTOP_VIEWPORT = {"width": 1280, "height": 720}
 MOBILE_VIEWPORT = {"width": 390, "height": 844}
+
+
+def shell_stack_viewport_width(page: Page) -> int:
+    """
+    Viewport width where the navbar stacks to a top bar.
+
+    Mirrors `@container shell (max-width: calc(81ch + 8.5rem - 40px))` in
+    assets/styling/navbar.css: body has 20px side margins, so the shell is
+    ~40px narrower than the viewport and stacking begins at 81ch + 8.5rem.
+    """
+    page.evaluate("() => document.fonts.ready")
+    return page.evaluate(
+        """() => {
+            const probe = document.createElement('div');
+            probe.style.cssText = 'position:absolute;visibility:hidden;width:1ch;font:inherit';
+            document.body.appendChild(probe);
+            const ch = probe.getBoundingClientRect().width;
+            probe.style.width = '1rem';
+            const rem = probe.getBoundingClientRect().width;
+            probe.remove();
+            return Math.floor(81 * ch + 8.5 * rem);
+        }"""
+    )
 
 
 def build_url(base_url: str, path: str = "") -> str:
@@ -193,14 +215,15 @@ def test_navbar_is_top_bar_on_mobile(page: Page):
 
 
 def test_navbar_layout_switches_across_breakpoint(page: Page):
-    """Navbar orientation flips when crossing the mobile breakpoint."""
+    """Navbar orientation flips when crossing the shell container breakpoint."""
     page.wait_for_load_state("networkidle")
     navbar = page.locator("#navbar")
+    breakpoint_px = shell_stack_viewport_width(page)
 
-    page.set_viewport_size({"width": MOBILE_BREAKPOINT_PX + 1, "height": 800})
+    page.set_viewport_size({"width": breakpoint_px + 1, "height": 800})
     assert navbar.evaluate("el => getComputedStyle(el).flexDirection") == "column"
 
-    page.set_viewport_size({"width": MOBILE_BREAKPOINT_PX, "height": 800})
+    page.set_viewport_size({"width": breakpoint_px, "height": 800})
     assert navbar.evaluate("el => getComputedStyle(el).flexDirection") == "row"
 
 
