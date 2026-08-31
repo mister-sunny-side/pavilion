@@ -163,6 +163,9 @@
   }
 }
 @layer utilities {
+  .\@container {
+    container-type: inline-size;
+  }
   .visible {
     visibility: visible;
   }
@@ -201,6 +204,9 @@
   }
   .flex {
     display: flex;
+  }
+  .inline {
+    display: inline;
   }
   .table {
     display: table;

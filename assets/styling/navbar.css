@@ -1,4 +1,18 @@
+/*
+ * Query the shell's inline size with the page font (JetBrains Mono).
+ * Media-query `ch` uses the browser's initial font, so it stacked too late.
+ *
+ * Body keeps 20px side margin until a smaller viewport, so the shell is
+ * ~40px narrower than the viewport. Side nav clips the viewport when:
+ *   100vw < 65ch + 2 * (3.5rem gap + 8ch "Dialogue" + 0.75rem padding)
+ *         = 81ch + 8.5rem
+ * → stack when shell max-width is that minus the 40px body margins.
+ *
+ * Styles target descendants only — a container cannot style itself.
+ */
 #app-shell {
+  container-type: inline-size;
+  container-name: shell;
   position: relative;
   min-height: calc(100vh - 40px);
 }
@@ -19,14 +33,14 @@
 }
 
 #navbar a {
-  color: #ffffff;
+  color: var(--text);
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 #navbar a:hover {
   cursor: pointer;
-  color: #91a4d2;
+  color: var(--accent);
 }
 
 #content {
@@ -35,13 +49,7 @@
   flex-direction: column;
 }
 
-@media (max-width: 48rem) {
-  #app-shell {
-    display: flex;
-    flex-direction: column;
-    min-height: calc(100vh - 24px);
-  }
-
+@container shell (max-width: calc(81ch + 8.5rem - 40px)) {
   #navbar {
     position: sticky;
     top: 0;
@@ -54,11 +62,10 @@
     gap: 1.25rem;
     padding: 0.75rem 0;
     width: 100%;
-    background-color: #0f1116;
+    background-color: var(--bg);
   }
 
   #content {
-    flex: 1;
-    min-height: 0;
+    min-height: calc(100vh - 24px - 3rem);
   }
 }
