@@ -8,7 +8,7 @@
   "terminals": [
     {
       "name": "dioxus",
-      "command": "dx serve --platform web --port 8080 --hot-reload=false",
+      "command": "dx serve --platform web --port 8080 --addr 0.0.0.0 --hot-reload=false",
       "description": "Dioxus web server on :8080. Wait for HTTP 200 (not 500) before running Playwright or manual UI checks."
     }
   ],
