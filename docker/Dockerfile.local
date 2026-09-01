@@ -45,8 +45,12 @@ WORKDIR /src
 
 COPY Cargo.toml Cargo.lock ./
 COPY Dioxus.toml clippy.toml tailwind.css ./
+COPY build.rs ./
 COPY assets ./assets
 COPY src ./src
+COPY vendor ./vendor
+COPY blog-posts ./blog-posts
+COPY pages ./pages
 
 # Prefetch crates (retry on flaky crates.io), then release-build the web bundle.
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
