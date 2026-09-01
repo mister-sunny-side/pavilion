@@ -280,3 +280,55 @@ jobs:
           path: target/dx/pavilion/release/web/
           if-no-files-found: error
           retention-days: 90
+
+  # After publish succeeds on a push to main/master (PR merge), build/push
+  # localhost:5000/pavilion:latest on the XPS and recreate compose.
+  deploy-home-lab:
+    needs: [publish]
+    runs-on: [self-hosted, home-lab]
+    env:
+      REGISTRY_IMAGE: localhost:5000/pavilion:latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build image for the lab registry
+        env:
+          DOCKER_BUILDKIT: "1"
+        run: |
+          set -euo pipefail
+          docker build --progress=plain --platform linux/amd64 \
+            -f docker/Dockerfile.local \
+            -t "${REGISTRY_IMAGE}" \
+            -t pavilion:ci \
+            .
+
+      - name: Push to home-lab registry
+        run: |
+          set -euo pipefail
+          echo "pushing ${REGISTRY_IMAGE}"
+          docker push "${REGISTRY_IMAGE}"
+          docker image inspect "${REGISTRY_IMAGE}" --format '{{.Id}}'
+
+      - name: Recreate compose service from registry
+        run: SOURCE_IMAGE="${REGISTRY_IMAGE}" /opt/home-lab/scripts/deploy-pavilion.sh
+
+      - name: Verify registry image is what compose is running
+        run: |
+          set -euo pipefail
+          docker pull "${REGISTRY_IMAGE}"
+          container_id="$(docker inspect pavilion --format '{{.Image}}')"
+          image_id="$(docker image inspect "${REGISTRY_IMAGE}" --format '{{.Id}}')"
+          echo "container=${container_id}"
+          echo "registry=${image_id}"
+          test "${container_id}" = "${image_id}"
+          ok=0
+          for _ in $(seq 1 30); do
+            if docker run --rm --network host alpine:3.20 \
+              wget -q -O /dev/null http://127.0.0.1:8080; then
+              ok=1
+              break
+            fi
+            sleep 2
+          done
+          test "${ok}" = "1"
