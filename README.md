@@ -108,7 +108,7 @@ On pull requests and pushes to `main`/`master`, GitHub Actions:
 
 On pushes to `main`/`master` only (after lint + e2e pass), a **publish** job builds a release web bundle and uploads it as the `pavilion-web` Actions artifact (`server` binary + `public/` static/WASM assets). Download it from the workflow run’s Artifacts section.
 
-A **deploy-home-lab** job then runs on the XPS self-hosted runner (`runs-on: [self-hosted, home-lab]`). It builds `docker/Dockerfile.local`, `docker push`es `localhost:5000/pavilion:latest` into the lab’s loopback registry, and recreates the compose service from that tag. Lint and e2e stay on `ubuntu-latest`. Fork PRs do not get this runner; same-repo PRs and `workflow_dispatch` can deploy so the registry path can be tested before merge.
+After **publish** succeeds, **deploy-home-lab** runs on the XPS self-hosted runner (`runs-on: [self-hosted, home-lab]`). It builds `docker/Dockerfile.local`, `docker push`es `localhost:5000/pavilion:latest` into the lab’s loopback registry, and recreates the compose service from that tag. It does not run on pull requests.
 
 The XPS Radicle seed mirrors this repo from GitHub. It is not the review path.
 

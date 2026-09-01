@@ -5,7 +5,6 @@ on:
     branches: [main, master]
   push:
     branches: [main, master]
-  workflow_dispatch:
 
 defaults:
   run:
@@ -282,15 +281,10 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-  # Build/push to the XPS loopback registry (127.0.0.1:5000), then recreate compose.
-  # Same-repo PRs and workflow_dispatch run deploy without waiting on ubuntu-latest
-  # so we can test the registry path. Fork PRs never get this runner.
+  # After publish succeeds on a push to main/master (PR merge), build/push
+  # localhost:5000/pavilion:latest on the XPS and recreate compose.
   deploy-home-lab:
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) ||
-      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
-    needs: [lint-and-format, build-and-test]
+    needs: [publish]
     runs-on: [self-hosted, home-lab]
     env:
       REGISTRY_IMAGE: localhost:5000/pavilion:latest
