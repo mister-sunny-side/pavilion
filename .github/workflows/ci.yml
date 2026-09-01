@@ -5,6 +5,7 @@ on:
     branches: [main, master]
   push:
     branches: [main, master]
+  workflow_dispatch:
 
 defaults:
   run:
@@ -281,21 +282,59 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-  # Build the local Docker image on the XPS and recreate the compose service.
+  # Build/push to the XPS loopback registry (127.0.0.1:5000), then recreate compose.
+  # Same-repo PRs and workflow_dispatch run deploy without waiting on ubuntu-latest
+  # so we can test the registry path. Fork PRs never get this runner.
   deploy-home-lab:
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) ||
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     needs: [lint-and-format, build-and-test]
     runs-on: [self-hosted, home-lab]
+    env:
+      REGISTRY_IMAGE: localhost:5000/pavilion:latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build local image
+      - name: Build image for the lab registry
         env:
           DOCKER_BUILDKIT: "1"
         run: |
+          set -euo pipefail
           docker build --progress=plain --platform linux/amd64 \
-            -f docker/Dockerfile.local -t pavilion:ci .
+            -f docker/Dockerfile.local \
+            -t "${REGISTRY_IMAGE}" \
+            -t pavilion:ci \
+            .
 
-      - name: Deploy to lab compose
-        run: SOURCE_IMAGE=pavilion:ci /opt/home-lab/scripts/deploy-pavilion.sh
+      - name: Push to home-lab registry
+        run: |
+          set -euo pipefail
+          echo "pushing ${REGISTRY_IMAGE}"
+          docker push "${REGISTRY_IMAGE}"
+          docker image inspect "${REGISTRY_IMAGE}" --format '{{.Id}}'
+
+      - name: Recreate compose service from registry
+        run: SOURCE_IMAGE="${REGISTRY_IMAGE}" /opt/home-lab/scripts/deploy-pavilion.sh
+
+      - name: Verify registry image is what compose is running
+        run: |
+          set -euo pipefail
+          docker pull "${REGISTRY_IMAGE}"
+          container_id="$(docker inspect pavilion --format '{{.Image}}')"
+          image_id="$(docker image inspect "${REGISTRY_IMAGE}" --format '{{.Id}}')"
+          echo "container=${container_id}"
+          echo "registry=${image_id}"
+          test "${container_id}" = "${image_id}"
+          ok=0
+          for _ in $(seq 1 30); do
+            if docker run --rm --network host alpine:3.20 \
+              wget -q -O /dev/null http://127.0.0.1:8080; then
+              ok=1
+              break
+            fi
+            sleep 2
+          done
+          test "${ok}" = "1"
