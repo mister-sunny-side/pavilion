@@ -280,3 +280,22 @@ jobs:
           path: target/dx/pavilion/release/web/
           if-no-files-found: error
           retention-days: 90
+
+  # Build the local Docker image on the XPS and recreate the compose service.
+  deploy-home-lab:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    needs: [lint-and-format, build-and-test]
+    runs-on: [self-hosted, home-lab]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build local image
+        env:
+          DOCKER_BUILDKIT: "1"
+        run: |
+          docker build --progress=plain --platform linux/amd64 \
+            -f docker/Dockerfile.local -t pavilion:ci .
+
+      - name: Deploy to lab compose
+        run: SOURCE_IMAGE=pavilion:ci /opt/home-lab/scripts/deploy-pavilion.sh
